@@ -3,12 +3,21 @@
   hosts: all
   become: true
 
-  vars:
-    liste_users:
-      - testuser1
-      - testuser2
+  vars_files:
+    - vars-bootstrap.yaml
 
   tasks:
+    # Utilisation module RAW pour vérifier et tenter d'installer l'interpreteur python3
+    - name: Verification interpreteur python
+      raw: 'bash -c "test -f /usr/bin/python3"'
+      ignore_errors: true
+      # Enregistrement de l'output du module
+      register: test_python3_output
+      
+    - name: Analyse de la donnee test_python3_output
+      ansible.builtin.debug:
+        msg: "{{ test_python3_output }}"
+       
     - name: Creation d'un user standard avec groupe sudo,wheel
       ansible.builtin.user:
         name: formation
@@ -17,13 +26,14 @@
         groups: "{{ sudogrp }}"
 
     - name: Creation d'utilisateurs standards
-      ansible.builtin.user :
-        name: "{{ item }}"
-        state: present
-        shell: /bin/bash
+      ansible.builtin.user:
+        name: "{{ item.key }}"
+        state: "{{ item.value.state | default('absent')}}"
+        shell: "{{ item.value.shell | default ('/bin/bash')}}"
+        comment: "{{ item.value.comment | default(omit) }}"
         password: "{{ lookup('password', 'credentials'
           + '/' + inventory_hostname + '/' 
-          + item 
+          + item.key 
           + '.password length=15') | password_hash('sha512') }}"
         update_password: on_create
-      loop: "{{ liste_users }}"
+      loop: "{{ liste_users | dict2items }}"
