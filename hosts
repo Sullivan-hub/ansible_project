@@ -1,4 +1,3 @@
-manager ansible_connection=local
 
 [linux:children]
 centos

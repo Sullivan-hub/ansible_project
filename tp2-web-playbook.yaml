@@ -1,0 +1,7 @@
+---
+- name: PLAY - deploiement
+  hosts: all
+  become: true
+  
+  roles: 
+    - apache_0.0.1
